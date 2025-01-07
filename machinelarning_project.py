@@ -56,21 +56,21 @@ X_scaled = scaler.fit_transform(X)
 # Split data
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
+# Define models and hyperparameters globally
+models = {
+    "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
+    "Decision Tree": DecisionTreeClassifier(random_state=42),
+    "Gradient Boosting": GradientBoostingClassifier(random_state=42)
+}
+
+params = {
+    "Logistic Regression": {"C": [0.1, 1, 10]},
+    "Decision Tree": {"max_depth": [3, 5, 10], "min_samples_split": [2, 5, 10]},
+    "Gradient Boosting": {"n_estimators": [50, 100], "learning_rate": [0.01, 0.1]}
+}
+
 if menu == "Model Training":
     st.header("Model Training with Hyperparameter Tuning")
-
-    # Models and Hyperparameter Tuning
-    models = {
-        "Logistic Regression": LogisticRegression(max_iter=1000, random_state=42),
-        "Decision Tree": DecisionTreeClassifier(random_state=42),
-        "Gradient Boosting": GradientBoostingClassifier(random_state=42)
-    }
-
-    params = {
-        "Logistic Regression": {"C": [0.1, 1, 10]},
-        "Decision Tree": {"max_depth": [3, 5, 10], "min_samples_split": [2, 5, 10]},
-        "Gradient Boosting": {"n_estimators": [50, 100], "learning_rate": [0.01, 0.1]}
-    }
 
     # Sidebar for model selection
     selected_model = st.sidebar.selectbox("Select Model", list(models.keys()))
