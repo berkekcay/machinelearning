@@ -108,22 +108,24 @@ if menu == "Model Training":
     st.write("#### Performance After Hyperparameter Tuning")
     st.json(tuned_metrics)
 
-    # Display classification report as a DataFrame for better visualization
+    # Performance Comparison Visualization
+    st.write("### Performance Comparison")
+    comparison_df = pd.DataFrame({"Before Tuning": base_metrics, "After Tuning": tuned_metrics}).T
+    st.dataframe(comparison_df)
+
+    # Bar Chart for Performance Metrics
+    fig, ax = plt.subplots(figsize=(10, 6))
+    comparison_df.plot(kind="bar", ax=ax)
+    ax.set_title("Performance Metrics Comparison")
+    ax.set_ylabel("Scores")
+    ax.set_xticklabels(comparison_df.index, rotation=0)
+    st.pyplot(fig)
+
+    # Classification Report
     st.write("#### Classification Report")
     report = classification_report(y_test, tuned_pred, output_dict=True)
     report_df = pd.DataFrame(report).transpose()
     st.dataframe(report_df)
-
-    # Heatmap for classification metrics using matplotlib
-    st.write("#### Classification Report Heatmap")
-    fig, ax = plt.subplots(figsize=(8, 6))
-    metrics = report_df.iloc[:-1, :-1]
-    cax = ax.matshow(metrics.values, cmap="YlGnBu")
-    fig.colorbar(cax)
-    plt.xticks(range(metrics.shape[1]), metrics.columns, rotation=90)
-    plt.yticks(range(metrics.shape[0]), metrics.index)
-    plt.title("Classification Metrics Heatmap")
-    st.pyplot(fig)
 
     # Feature Importance for Tree-based models
     if selected_model in ["Decision Tree", "Gradient Boosting"]:
@@ -180,9 +182,29 @@ if menu == "Performance Summary":
     after_tuning = {name: perf["After Tuning"]["Accuracy"] for name, perf in results.items()}
 
     fig, ax = plt.subplots()
-    ax.bar(before_tuning.keys(), before_tuning.values(), label="Before Tuning", alpha=0.7)
-    ax.bar(after_tuning.keys(), after_tuning.values(), label="After Tuning", alpha=0.7)
+    width = 0.35
+    x = np.arange(len(before_tuning))
+    ax.bar(x - width/2, before_tuning.values(), width, label="Before Tuning")
+    ax.bar(x + width/2, after_tuning.values(), width, label="After Tuning")
+    ax.set_xticks(x)
+    ax.set_xticklabels(before_tuning.keys(), rotation=45)
     ax.set_title("Model Accuracy Comparison")
     ax.set_ylabel("Accuracy")
     ax.legend()
+    st.pyplot(fig)
+
+    st.write("### Metric Comparison Across Models")
+    metrics_comparison = pd.DataFrame({
+        "Before Tuning": before_tuning,
+        "After Tuning": after_tuning
+    })
+    st.dataframe(metrics_comparison)
+
+    # Line Chart for Performance Trends
+    fig, ax = plt.subplots(figsize=(10, 6))
+    metrics_comparison.plot(kind="line", marker="o", ax=ax)
+    ax.set_title("Performance Trends Across Models")
+    ax.set_ylabel("Accuracy")
+    ax.set_xticks(range(len(metrics_comparison.index)))
+    ax.set_xticklabels(metrics_comparison.index, rotation=0)
     st.pyplot(fig)
