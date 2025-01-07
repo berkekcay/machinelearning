@@ -7,7 +7,6 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
 import streamlit as st
-import seaborn as sns
 import matplotlib.pyplot as plt
 
 # Streamlit UI
@@ -40,7 +39,10 @@ if menu == "Dataset Overview":
     # Correlation heatmap
     st.write("### Feature Correlation Heatmap")
     fig, ax = plt.subplots(figsize=(10, 8))
-    sns.heatmap(df.corr(), annot=False, cmap="coolwarm", ax=ax)
+    cax = ax.matshow(df.corr(), cmap="coolwarm")
+    fig.colorbar(cax)
+    plt.xticks(range(len(df.columns)), df.columns, rotation=90)
+    plt.yticks(range(len(df.columns)), df.columns)
     st.pyplot(fig)
 
 # Features and Target
