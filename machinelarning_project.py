@@ -18,7 +18,7 @@ st.sidebar.header("Navigation")
 menu = st.sidebar.radio("Select a Section", ["Dataset Overview", "Model Training", "Performance Summary"])
 
 # Dataset Loading and Preprocessing
-@st.cache
+@st.cache_data
 def load_data():
     from sklearn.datasets import load_breast_cancer
     data = load_breast_cancer(as_frame=True)
@@ -112,9 +112,9 @@ if menu == "Performance Summary":
         results[name] = {
             "Best Params": grid.best_params_,
             "Accuracy": accuracy_score(y_test, y_pred),
-            "Precision": precision_score(y_test, y_pred),
-            "Recall": recall_score(y_test, y_pred),
-            "F1-Score": f1_score(y_test, y_pred)
+            "Precision": precision_score(y_test, y_pred, zero_division=0),
+            "Recall": recall_score(y_test, y_pred, zero_division=0),
+            "F1-Score": f1_score(y_test, y_pred, zero_division=0)
         }
 
     results_df = pd.DataFrame(results).T
