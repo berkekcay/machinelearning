@@ -8,6 +8,7 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
 import streamlit as st
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Streamlit UI
 st.set_page_config(page_title="Machine Learning App", layout="wide")
@@ -86,8 +87,18 @@ if menu == "Model Training":
     st.write("#### Best Parameters")
     st.json(grid.best_params_)
 
+    # Display classification report as a DataFrame for better visualization
     st.write("#### Classification Report")
-    st.text(classification_report(y_test, y_pred))
+    report = classification_report(y_test, y_pred, output_dict=True)
+    report_df = pd.DataFrame(report).transpose()
+    st.dataframe(report_df)
+
+    # Heatmap for classification metrics
+    st.write("#### Classification Report Heatmap")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(report_df.iloc[:-1, :-1], annot=True, cmap="YlGnBu", fmt=".2f", ax=ax)
+    plt.title("Classification Metrics Heatmap")
+    st.pyplot(fig)
 
     # Feature Importance for Tree-based models
     if selected_model in ["Decision Tree", "Gradient Boosting"]:
