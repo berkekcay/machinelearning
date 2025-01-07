@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import GradientBoostingClassifier
@@ -20,9 +20,16 @@ menu = st.sidebar.radio("Select a Section", ["Dataset Overview", "Model Training
 # Dataset Loading and Preprocessing
 @st.cache_data
 def load_data():
-    from sklearn.datasets import load_breast_cancer
-    data = load_breast_cancer(as_frame=True)
-    df = data.frame
+    url = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
+    df = pd.read_csv(url)
+    # Preprocessing
+    df.drop(["PassengerId", "Name", "Ticket", "Cabin"], axis=1, inplace=True)
+    df["Age"].fillna(df["Age"].median(), inplace=True)
+    df["Embarked"].fillna(df["Embarked"].mode()[0], inplace=True)
+    label_encoders = {}
+    for column in ["Sex", "Embarked"]:
+        label_encoders[column] = LabelEncoder()
+        df[column] = label_encoders[column].fit_transform(df[column])
     return df
 
 df = load_data()
@@ -46,8 +53,8 @@ if menu == "Dataset Overview":
     st.pyplot(fig)
 
 # Features and Target
-X = df.drop("target", axis=1)
-y = df["target"]
+X = df.drop("Survived", axis=1)
+y = df["Survived"]
 
 # Scale features
 scaler = StandardScaler()
@@ -130,7 +137,7 @@ if menu == "Model Training":
     # Feature Importance for Tree-based models
     if selected_model in ["Decision Tree", "Gradient Boosting"]:
         st.write("#### Feature Importance")
-        feature_importance = pd.Series(best_model.feature_importances_, index=df.columns[:-1])
+        feature_importance = pd.Series(best_model.feature_importances_, index=X.columns)
         feature_importance = feature_importance.sort_values(ascending=False)
         fig, ax = plt.subplots()
         feature_importance.plot(kind="bar", ax=ax, color="skyblue")
