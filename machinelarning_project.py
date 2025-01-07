@@ -76,19 +76,41 @@ if menu == "Model Training":
     selected_model = st.sidebar.selectbox("Select Model", list(models.keys()))
     st.write(f"### Training {selected_model}")
 
+    # Train model without tuning
+    base_model = models[selected_model]
+    base_model.fit(X_train, y_train)
+    base_pred = base_model.predict(X_test)
+
+    base_metrics = {
+        "Accuracy": accuracy_score(y_test, base_pred),
+        "Precision": precision_score(y_test, base_pred, zero_division=0),
+        "Recall": recall_score(y_test, base_pred, zero_division=0),
+        "F1-Score": f1_score(y_test, base_pred, zero_division=0)
+    }
+
+    st.write("#### Performance Before Hyperparameter Tuning")
+    st.json(base_metrics)
+
     # Hyperparameter tuning
     grid = GridSearchCV(models[selected_model], params[selected_model], cv=5, scoring="accuracy")
     grid.fit(X_train, y_train)
 
     best_model = grid.best_estimator_
-    y_pred = best_model.predict(X_test)
+    tuned_pred = best_model.predict(X_test)
 
-    st.write("#### Best Parameters")
-    st.json(grid.best_params_)
+    tuned_metrics = {
+        "Accuracy": accuracy_score(y_test, tuned_pred),
+        "Precision": precision_score(y_test, tuned_pred, zero_division=0),
+        "Recall": recall_score(y_test, tuned_pred, zero_division=0),
+        "F1-Score": f1_score(y_test, tuned_pred, zero_division=0)
+    }
+
+    st.write("#### Performance After Hyperparameter Tuning")
+    st.json(tuned_metrics)
 
     # Display classification report as a DataFrame for better visualization
     st.write("#### Classification Report")
-    report = classification_report(y_test, y_pred, output_dict=True)
+    report = classification_report(y_test, tuned_pred, output_dict=True)
     report_df = pd.DataFrame(report).transpose()
     st.dataframe(report_df)
 
@@ -117,28 +139,50 @@ if menu == "Performance Summary":
 
     results = {}
     for name, model in models.items():
-        grid = GridSearchCV(model, params[name], cv=5, scoring="accuracy")
-        grid.fit(X_train, y_train)
+        # Performance before tuning
+        model.fit(X_train, y_train)
+        base_pred = model.predict(X_test)
 
-        best_model = grid.best_estimator_
-        y_pred = best_model.predict(X_test)
-
-        results[name] = {
-            "Best Params": grid.best_params_,
-            "Accuracy": accuracy_score(y_test, y_pred),
-            "Precision": precision_score(y_test, y_pred, zero_division=0),
-            "Recall": recall_score(y_test, y_pred, zero_division=0),
-            "F1-Score": f1_score(y_test, y_pred, zero_division=0)
+        base_metrics = {
+            "Accuracy": accuracy_score(y_test, base_pred),
+            "Precision": precision_score(y_test, base_pred, zero_division=0),
+            "Recall": recall_score(y_test, base_pred, zero_division=0),
+            "F1-Score": f1_score(y_test, base_pred, zero_division=0)
         }
 
-    results_df = pd.DataFrame(results).T
-    st.write("### Model Performance Metrics")
-    st.dataframe(results_df)
+        # Performance after tuning
+        grid = GridSearchCV(model, params[name], cv=5, scoring="accuracy")
+        grid.fit(X_train, y_train)
+        best_model = grid.best_estimator_
+        tuned_pred = best_model.predict(X_test)
+
+        tuned_metrics = {
+            "Accuracy": accuracy_score(y_test, tuned_pred),
+            "Precision": precision_score(y_test, tuned_pred, zero_division=0),
+            "Recall": recall_score(y_test, tuned_pred, zero_division=0),
+            "F1-Score": f1_score(y_test, tuned_pred, zero_division=0)
+        }
+
+        results[name] = {
+            "Before Tuning": base_metrics,
+            "After Tuning": tuned_metrics
+        }
+
+    st.write("### Model Performance Comparison")
+    for model_name, performance in results.items():
+        st.write(f"#### {model_name}")
+        st.write("Before Tuning:", performance["Before Tuning"])
+        st.write("After Tuning:", performance["After Tuning"])
 
     # Visualization
     st.write("### Accuracy Comparison")
+    before_tuning = {name: perf["Before Tuning"]["Accuracy"] for name, perf in results.items()}
+    after_tuning = {name: perf["After Tuning"]["Accuracy"] for name, perf in results.items()}
+
     fig, ax = plt.subplots()
-    results_df["Accuracy"].plot(kind="bar", ax=ax, color="green")
+    ax.bar(before_tuning.keys(), before_tuning.values(), label="Before Tuning", alpha=0.7)
+    ax.bar(after_tuning.keys(), after_tuning.values(), label="After Tuning", alpha=0.7)
     ax.set_title("Model Accuracy Comparison")
     ax.set_ylabel("Accuracy")
+    ax.legend()
     st.pyplot(fig)
