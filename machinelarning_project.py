@@ -5,6 +5,8 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 from sklearn.metrics import classification_report, accuracy_score, precision_score, recall_score, f1_score
 import streamlit as st
 import matplotlib.pyplot as plt
@@ -15,7 +17,7 @@ st.title("Machine Learning Task with Enhanced UI and Hyperparameter Tuning")
 
 # Sidebar for navigation
 st.sidebar.header("Navigation")
-menu = st.sidebar.radio("Select a Section", ["Dataset Overview", "Model Training", "Performance Summary"])
+menu = st.sidebar.radio("Select a Section", ["Dataset Overview", "Model Training", "Performance Summary", "Clustering"])
 
 # Dataset Loading and Preprocessing
 @st.cache_data
@@ -141,6 +143,39 @@ if menu == "Model Training":
         feature_importance = feature_importance.sort_values(ascending=False)
         fig, ax = plt.subplots()
         feature_importance.plot(kind="bar", ax=ax, color="skyblue")
+        st.pyplot(fig)
+
+if menu == "Clustering":
+    st.header("Clustering Analysis")
+
+    # Select features for clustering
+    st.write("### Select Features for Clustering")
+    features = st.multiselect("Features:", options=df.columns, default=["Age", "Fare", "Pclass"])
+    num_clusters = st.slider("Number of Clusters (K):", min_value=2, max_value=10, value=3)
+
+    if len(features) > 0:
+        # K-Means Clustering
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+        clusters = kmeans.fit_predict(df[features])
+        df["Cluster"] = clusters
+
+        # Display cluster assignments
+        st.write("### Cluster Assignments")
+        st.dataframe(df[["Cluster"] + features])
+
+        # Visualize clusters using PCA
+        st.write("### Clustering Visualization")
+        pca = PCA(n_components=2)
+        reduced_data = pca.fit_transform(df[features])
+        reduced_df = pd.DataFrame(reduced_data, columns=["PC1", "PC2"])
+        reduced_df["Cluster"] = clusters
+
+        fig, ax = plt.subplots()
+        for cluster in range(num_clusters):
+            cluster_data = reduced_df[reduced_df["Cluster"] == cluster]
+            ax.scatter(cluster_data["PC1"], cluster_data["PC2"], label=f"Cluster {cluster}")
+        ax.set_title("Clusters Visualized in 2D using PCA")
+        ax.legend()
         st.pyplot(fig)
 
 if menu == "Performance Summary":
